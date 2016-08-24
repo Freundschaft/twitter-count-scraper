@@ -41,8 +41,10 @@ var getTwitterInfo = function (twitterUsername) {
   });
 };
 
-var getTwitterInfoPromises = R.map(getTwitterInfo, twitterUsernames);
-Promise.all(getTwitterInfoPromises)
+
+var getAllTwitterInfos = Promise.resolve(twitterUsernames).map(getTwitterInfo,{concurrency: 1 });
+
+getAllTwitterInfos
   .then(function (results) {
     R.addIndex(R.forEach)(function (heading, headingIndex) {
       var cell_ref = XLSX.utils.encode_cell({c: headingIndex, r: 0});
