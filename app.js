@@ -4,7 +4,7 @@ var osmosis = require('osmosis'),
   Promise = require('bluebird'),
   Twitter = require('twitter'),
   cookie = require('cookie'),
-  credentials = require('credentials.json'),
+  credentials = require('./credentials.json'),
   client = new Twitter({
     consumer_key: '',
     consumer_secret: '',
