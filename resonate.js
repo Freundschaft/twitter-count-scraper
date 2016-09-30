@@ -13,7 +13,8 @@ var osmosis = require('osmosis'),
   });
 
 var ws_name = "resonate profiles";
-var attributes = ['username', 'Genres', 'Label', 'Location'];
+var attributes = ['resonateProfileLink', 'genres', 'label', 'location'];
+var twitterAttributes = ['username', 'followers_count', 'friends_count', 'statuses_count', 'favourites_count', 'listed_count'];
 
 function Workbook() {
   if (!(this instanceof Workbook)) return new Workbook();
@@ -30,7 +31,7 @@ var getUserDirectory = function () {
     var resonateProfileLinks = [];
 
     osmosis
-      .get('https://resonate.is/directories/latest-musicians-twitter/?members_page=50')
+      .get('https://resonate.is/directories/latest-musicians-twitter/?members_page=1')
       .login(credentials.resonateUsername, credentials.resonatePassword)
       .then(function (result) {
         var cookies = cookie.parse(result.request.headers.cookie);
@@ -51,15 +52,40 @@ var getUserDirectory = function () {
   });
 };
 
+var getTwitterInfo = function (twitterUrl) {
+  return new Promise(function (resolve, reject) {
+    var twitterUsername = twitterUrl.substr(twitterUrl.lastIndexOf('/') + 1);
+    var twitterInfo = {username: twitterUsername};
+    osmosis
+      .get(twitterUrl)
+      .find("#init-data/@value")
+      .set('jsonData')
+      .data(function (result) {
+        twitterInfo = R.merge(twitterInfo, JSON.parse(result.jsonData).profile_user);
+      })
+      .done(function () {
+        resolve(twitterInfo);
+      })
+      .log(console.log)
+      .error(console.log)
+      .debug(console.log);
+  });
+};
+
 var getResonateProfileInfo = function (resonateProfileLink) {
   return new Promise(function (resolve, reject) {
     var profileInfo = {profileLink: resonateProfileLink};
     osmosis
       .get(resonateProfileLink)
       .set({
-        'Genres': "div[contains(@class, 'um-main-meta')]/div[contains(@class, 'genre')][1]/[2]",
-        'Label': "div[contains(@class, 'um-main-meta')]/div[contains(@class, 'genre')][2]/[2]",
-        'Location': "div[contains(@class, 'um-main-meta')]/div[contains(@class, 'genre')][3]/[2]"
+        //'username': "h1.entry-title[2]@value",
+        'username': "h1[contains(@class, 'entry-title')][1]",
+        'genres': "div[contains(@class, 'um-main-meta')]/div[contains(@class, 'genre')][1]/[2]",
+        'label': "div[contains(@class, 'um-main-meta')]/div[contains(@class, 'genre')][2]/[2]",
+        'location': "div[contains(@class, 'um-main-meta')]/div[contains(@class, 'genre')][3]/[2]",
+        'twitterUrl': "a[@title='Twitter']/@href",
+        'facebookUrl': "a[@title='Fwitter']/@href",
+        'instagramUrl': "a[@title='Instagram']/@href"
       })
       .data(function (result) {
         profileInfo = R.merge(profileInfo, result);
@@ -73,10 +99,30 @@ var getResonateProfileInfo = function (resonateProfileLink) {
   });
 };
 
+function getAllInfo(resonanteProfile) {
+  return getResonateProfileInfo(resonanteProfile).bind(this)
+    .then(function (profileInfo) {
+      this.profileInfo = profileInfo;
+      if (profileInfo.twitterUrl) {
+        return getTwitterInfo(profileInfo.twitterUrl)
+          .then(function (twitterInfo) {
+            var twitterInfoFiltered = R.fromPairs(R.filter(R.compose(R.contains(R.__, twitterAttributes), R.head), R.toPairs(twitterInfo)));
+            var twitterInfoPrefixed = R.fromPairs(R.map(function (pair) {
+              pair[0] = R.compose(R.concat('twitter_', R.__), R.head)(pair);
+              return pair;
+            }, R.toPairs(twitterInfoFiltered)));
+            return R.merge(this.profileInfo, twitterInfoPrefixed);
+          });
+      } else {
+        return this.profileInfo;
+      }
+    });
+}
+
 getUserDirectory()
   .then(function (resonateProfileLinks) {
     return Promise.resolve(resonateProfileLinks)
-      .map(getResonateProfileInfo, {concurrency: 4});
+      .map(getAllInfo, {concurrency: 1});
   })
   .then(function (results) {
     console.log('processing results...');
@@ -84,17 +130,17 @@ getUserDirectory()
       var cell_ref = XLSX.utils.encode_cell({c: headingIndex, r: 0});
       ws[cell_ref] = {t: "s", v: heading};
       range.e.c = headingIndex;
-    }, attributes);
-    R.addIndex(R.forEach)(function (twitterInfo, index) {
+    }, R.keys(R.mergeAll(results)));
+    R.addIndex(R.forEach)(function (userInfo, index) {
       R.addIndex(R.forEach)(function (key, keyIndex) {
         var cell_ref = XLSX.utils.encode_cell({c: keyIndex, r: index + 1});
-        if (isNaN(twitterInfo[key])) {
-          ws[cell_ref] = {t: "s", v: twitterInfo[key]};
+        if (isNaN(userInfo[key])) {
+          ws[cell_ref] = {t: "s", v: userInfo[key]};
         } else {
-          ws[cell_ref] = {t: "n", v: twitterInfo[key]};
+          ws[cell_ref] = {t: "n", v: userInfo[key]};
         }
         range.e.r = index + 1;
-      }, attributes);
+      }, R.keys(R.mergeAll(results)));
     }, results);
 
     ws['!ref'] = XLSX.utils.encode_range(range);
