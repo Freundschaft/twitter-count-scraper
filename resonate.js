@@ -84,7 +84,7 @@ var getResonateProfileInfo = function (resonateProfileLink) {
         'label': "div[contains(@class, 'um-main-meta')]/div[contains(@class, 'genre')][2]/[2]",
         'location': "div[contains(@class, 'um-main-meta')]/div[contains(@class, 'genre')][3]/[2]",
         'twitterUrl': "a[@title='Twitter']/@href",
-        'facebookUrl': "a[@title='Fwitter']/@href",
+        'facebookUrl': "a[@title='Facebook']/@href",
         'instagramUrl': "a[@title='Instagram']/@href"
       })
       .data(function (result) {
