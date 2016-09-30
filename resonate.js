@@ -12,8 +12,8 @@ var osmosis = require('osmosis'),
     access_token_secret: ''
   });
 
-var ws_name = "twitter Results";
-var attributes = ['username', 'followers_count', 'friends_count', 'statuses_count', 'favourites_count', 'listed_count'];
+var ws_name = "resonate profiles";
+var attributes = ['username', 'Genres', 'Label', 'Location'];
 
 function Workbook() {
   if (!(this instanceof Workbook)) return new Workbook();
@@ -27,23 +27,23 @@ var range = {s: {c: 0, r: 0}, e: {c: 0, r: 0}};
 
 var getUserDirectory = function () {
   return new Promise(function (resolve, reject) {
-    var twitterUsernames = [];
+    var resonateProfileLinks = [];
 
     osmosis
-      .get('https://resonate.is/directories/latest-musicians-twitter/?members_page=1')
+      .get('https://resonate.is/directories/latest-musicians-twitter/?members_page=50')
       .login(credentials.resonateUsername, credentials.resonatePassword)
       .then(function (result) {
         var cookies = cookie.parse(result.request.headers.cookie);
         osmosis.config('cookies', cookies);
       })
       .paginate("a[@title='Next']")
-      .find("a[@title='Twitter']/@href")
-      .set('twitterUsername')
-      .data(function (twitterUsername) {
-        twitterUsernames.push((/^.*twitter.com\/(.*)$/gm).exec(twitterUsername.twitterUsername)[1]);
+      .find("div[contains(@class, 'um-member-photo')]//a@href")
+      .set('resonateProfileLink')
+      .data(function (data) {
+        resonateProfileLinks.push(data.resonateProfileLink);
       })
       .done(function () {
-        resolve(twitterUsernames);
+        resolve(resonateProfileLinks);
       })
       .log(console.log)
       .error(console.log)
@@ -51,18 +51,21 @@ var getUserDirectory = function () {
   });
 };
 
-var getTwitterInfo = function (twitterUsername) {
+var getResonateProfileInfo = function (resonateProfileLink) {
   return new Promise(function (resolve, reject) {
-    var twitterInfo = {username: twitterUsername};
+    var profileInfo = {profileLink: resonateProfileLink};
     osmosis
-      .get('twitter.com/' + twitterUsername)
-      .find("#init-data/@value")
-      .set('jsonData')
+      .get(resonateProfileLink)
+      .set({
+        'Genres': "div[contains(@class, 'um-main-meta')]/div[contains(@class, 'genre')][1]/[2]",
+        'Label': "div[contains(@class, 'um-main-meta')]/div[contains(@class, 'genre')][2]/[2]",
+        'Location': "div[contains(@class, 'um-main-meta')]/div[contains(@class, 'genre')][3]/[2]"
+      })
       .data(function (result) {
-        twitterInfo = R.merge(twitterInfo, JSON.parse(result.jsonData).profile_user);
+        profileInfo = R.merge(profileInfo, result);
       })
       .done(function () {
-        resolve(twitterInfo);
+        resolve(profileInfo);
       })
       .log(console.log)
       .error(console.log)
@@ -71,9 +74,9 @@ var getTwitterInfo = function (twitterUsername) {
 };
 
 getUserDirectory()
-  .then(function (twitterUsernames) {
-    var getAllTwitterInfos = Promise.resolve(twitterUsernames).map(getTwitterInfo, {concurrency: 1});
-    return getAllTwitterInfos;
+  .then(function (resonateProfileLinks) {
+    return Promise.resolve(resonateProfileLinks)
+      .map(getResonateProfileInfo, {concurrency: 4});
   })
   .then(function (results) {
     console.log('processing results...');
