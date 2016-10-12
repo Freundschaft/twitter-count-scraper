@@ -2,6 +2,7 @@ var osmosis = require('osmosis'),
   R = require('ramda'),
   XLSX = require('XLSX'),
   Promise = require('bluebird'),
+  request = Promise.promisifyAll(require('request')),
   Twitter = require('twitter'),
   cookie = require('cookie'),
   credentials = require('./credentials.json'),
@@ -41,7 +42,7 @@ var getUserDirectory = function () {
       .find("div[contains(@class, 'um-member-photo')]//a@href")
       .set('resonateProfileLink')
       .data(function (data) {
-        resonateProfileLinks.push(data.resonateProfileLink);
+        resonateProfileLinks.push(data.resonateProfileLink.split('/')[data.resonateProfileLink.split('/').length - 2]);
       })
       .done(function () {
         resolve(resonateProfileLinks);
@@ -72,8 +73,9 @@ var getTwitterInfo = function (twitterUrl) {
   });
 };
 
-var getResonateProfileInfo = function (resonateProfileLink) {
+var getResonateProfileInfo = function (resonateProfileId) {
   return new Promise(function (resolve, reject) {
+    var resonateProfileLink = 'https://resonate.is/profile/' + resonateProfileId;
     var profileInfo = {profileLink: resonateProfileLink};
     osmosis
       .get(resonateProfileLink)
@@ -85,13 +87,30 @@ var getResonateProfileInfo = function (resonateProfileLink) {
         'location': "div[contains(@class, 'um-main-meta')]/div[contains(@class, 'genre')][3]/[2]",
         'twitterUrl': "a[@title='Twitter']/@href",
         'facebookUrl': "a[@title='Facebook']/@href",
-        'instagramUrl': "a[@title='Instagram']/@href"
+        'instagramUrl': "a[@title='Instagram']/@href",
+        'blogs': 'label[for="musicblogs-1885"]'
       })
       .data(function (result) {
         profileInfo = R.merge(profileInfo, result);
       })
       .done(function () {
-        resolve(profileInfo);
+        request.getAsync({
+          url: 'https://resonate.is/um-api/get.user/',
+          qs: {
+            id: resonateProfileId,
+            key: credentials.resonateKey,
+            token: credentials.resonateToken,
+            fields: 'musicblogs,instagram,twitter,facebook,display_name,user_nicename,mylabel,Musicstyles'
+          },
+          json: true
+        })
+          .then(function (res) {
+            profileInfo.blogs = R.split('\r\n', R.path(['body', 'musicblogs'], res));
+            resolve(profileInfo)
+          })
+          .catch(function (err) {
+            resolve(profileInfo);
+          });
       })
       .log(console.log)
       .error(console.log)
@@ -99,8 +118,8 @@ var getResonateProfileInfo = function (resonateProfileLink) {
   });
 };
 
-function getAllInfo(resonanteProfile) {
-  return getResonateProfileInfo(resonanteProfile).bind(this)
+function getAllInfo(resonanteProfileId) {
+  return getResonateProfileInfo(resonanteProfileId).bind(this)
     .then(function (profileInfo) {
       this.profileInfo = profileInfo;
       if (profileInfo.twitterUrl) {
@@ -120,8 +139,8 @@ function getAllInfo(resonanteProfile) {
 }
 
 getUserDirectory()
-  .then(function (resonateProfileLinks) {
-    return Promise.resolve(resonateProfileLinks)
+  .then(function (resonateProfileIds) {
+    return Promise.resolve(resonateProfileIds)
       .map(getAllInfo, {concurrency: 1});
   })
   .then(function (results) {
@@ -134,7 +153,10 @@ getUserDirectory()
     R.addIndex(R.forEach)(function (userInfo, index) {
       R.addIndex(R.forEach)(function (key, keyIndex) {
         var cell_ref = XLSX.utils.encode_cell({c: keyIndex, r: index + 1});
-        if (isNaN(userInfo[key])) {
+        if (R.isArrayLike(userInfo[key])) {
+          ws[cell_ref] = {t: "s", v: R.join(',', userInfo[key])};
+        }
+        else if (isNaN(userInfo[key])) {
           ws[cell_ref] = {t: "s", v: userInfo[key]};
         } else {
           ws[cell_ref] = {t: "n", v: userInfo[key]};
