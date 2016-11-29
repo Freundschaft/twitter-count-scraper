@@ -1,21 +1,18 @@
-var osmosis = require('osmosis'),
+const osmosis = require('osmosis'),
   R = require('ramda'),
   XLSX = require('XLSX'),
   Promise = require('bluebird'),
   request = Promise.promisifyAll(require('request')),
   Twitter = require('twitter'),
+  path = require('path'),
+  fs = require('fs'),
   cookie = require('cookie'),
   credentials = require('./credentials.json'),
-  client = new Twitter({
-    consumer_key: '',
-    consumer_secret: '',
-    access_token_key: '',
-    access_token_secret: ''
-  });
-
-var ws_name = "resonate profiles";
-var attributes = ['resonateProfileLink', 'genres', 'label', 'location'];
-var twitterAttributes = ['username', 'followers_count', 'friends_count', 'statuses_count', 'favourites_count', 'listed_count'];
+  config = require('./config.json'),
+  SlackUploader = Promise.promisifyAll(require('node-slack-upload')),
+  slackUploader = Promise.promisifyAll(new SlackUploader(credentials.slackToken)),
+  ws_name = "resonate profiles",
+  twitterAttributes = ['username', 'followers_count', 'friends_count', 'statuses_count', 'favourites_count', 'listed_count'];
 
 function Workbook() {
   if (!(this instanceof Workbook)) return new Workbook();
@@ -26,34 +23,33 @@ function Workbook() {
 var wb = new Workbook();
 var ws = {};
 var range = {s: {c: 0, r: 0}, e: {c: 0, r: 0}};
+var currentCount = 0;
+var userCount = 0;
 
-var getUserDirectory = function () {
-  return new Promise(function (resolve, reject) {
-    var resonateProfileLinks = [];
-
-    osmosis
-      .get('https://resonate.is/directories/latest-musicians-twitter/?members_page=1')
-      .login(credentials.resonateUsername, credentials.resonatePassword)
-      .then(function (result) {
-        var cookies = cookie.parse(result.request.headers.cookie);
-        osmosis.config('cookies', cookies);
-      })
-      .paginate("a[@title='Next']")
-      .find("div[contains(@class, 'um-member-photo')]//a@href")
-      .set('resonateProfileLink')
-      .data(function (data) {
-        resonateProfileLinks.push(data.resonateProfileLink.split('/')[data.resonateProfileLink.split('/').length - 2]);
-      })
-      .done(function () {
-        resolve(resonateProfileLinks);
-      })
-      .log(console.log)
-      .error(console.log)
-      .debug(console.log);
-  });
+var logWithCount = function (message) {
+  console.log(`[${currentCount}/${userCount}]: ${message}`);
 };
 
+var getUserDirectory = function () {
+  process.stdout.write('getting user directory... ');
+  return request.getAsync({
+    url: 'https://resonate.is/um-api/get.users/',
+    qs: {
+      number: 10,
+      key: credentials.resonateKey,
+      token: credentials.resonateToken
+    },
+    json: true
+  })
+    .then(function (res) {
+      process.stdout.write("done.\n");
+      userCount = R.values(res.body).length;
+      console.log(`read ${userCount} users from API`);
+      return R.values(res.body);
+    });
+};
 var getTwitterInfo = function (twitterUrl) {
+  logWithCount('getting twitter profile information')
   return new Promise(function (resolve, reject) {
     var twitterUsername = twitterUrl.substr(twitterUrl.lastIndexOf('/') + 1);
     var twitterInfo = {username: twitterUsername};
@@ -67,18 +63,19 @@ var getTwitterInfo = function (twitterUrl) {
       .done(function () {
         resolve(twitterInfo);
       })
-      .log(console.log)
-      .error(console.log)
-      .debug(console.log);
+      //.log(console.log)
+      .error(logWithCount);
+    //.debug(console.log);
   });
 };
-
-var getResonateProfileInfo = function (resonateProfileId) {
+var getFullResonateProfileInfo = function (resonateProfile) {
+  resonateProfile.profileLink = 'https://resonate.is/profile/' + resonateProfile.ID;
+  currentCount++;
+  logWithCount(`getting full profile information for user with login "${R.prop('user_login', resonateProfile)}"`);
   return new Promise(function (resolve, reject) {
-    var resonateProfileLink = 'https://resonate.is/profile/' + resonateProfileId;
-    var profileInfo = {profileLink: resonateProfileLink};
+    var profileInfo = {profileLink: resonateProfile.profileLink};
     osmosis
-      .get(resonateProfileLink)
+      .get(resonateProfile.profileLink)
       .set({
         //'username': "h1.entry-title[2]@value",
         'username': "h1[contains(@class, 'entry-title')][1]",
@@ -97,59 +94,89 @@ var getResonateProfileInfo = function (resonateProfileId) {
         request.getAsync({
           url: 'https://resonate.is/um-api/get.user/',
           qs: {
-            id: resonateProfileId,
+            id: resonateProfile.ID,
             key: credentials.resonateKey,
             token: credentials.resonateToken,
-            fields: 'musicblogs,instagram,twitter,facebook,display_name,user_nicename,mylabel,Musicstyles'
+            fields: 'musicblogs,instagram,twitter,facebook,display_name,user_nicename,mylabel,Musicstyles,user_registered'
           },
           json: true
         })
           .then(function (res) {
             profileInfo.blogs = R.split('\r\n', R.path(['body', 'musicblogs'], res));
+            profileInfo.user_registered = R.path(['body', 'user_registered'], res);
+            profileInfo.twitter = R.path(['body', 'twitter'], res);
+            if (profileInfo.twitter && !(/(http(?:s)?:\/\/)?(?:www\.)?twitter\.com\/([a-zA-Z0-9_]+)/.test(profileInfo.twitter))) {
+              profileInfo.twitter = 'https://twitter.com/' + profileInfo.twitter;
+            }
             resolve(profileInfo)
           })
           .catch(function (err) {
             resolve(profileInfo);
           });
       })
-      .log(console.log)
-      .error(console.log)
-      .debug(console.log);
+      //.log(console.log)
+      .error(console.log);
+    //.debug(console.log);
   });
-};
 
-function getAllInfo(resonanteProfileId) {
-  return getResonateProfileInfo(resonanteProfileId).bind(this)
-    .then(function (profileInfo) {
-      this.profileInfo = profileInfo;
-      if (profileInfo.twitterUrl) {
-        return getTwitterInfo(profileInfo.twitterUrl)
+  return request.getAsync({
+    url: 'https://resonate.is/um-api/get.user/',
+    qs: {
+      id: resonateProfile.ID,
+      key: credentials.resonateKey,
+      token: credentials.resonateToken,
+      fields: 'musicblogs,instagram,twitter,facebook,display_name,user_nicename,mylabel,Musicstyles,user_registered'
+    },
+    json: true
+  })
+    .then(function (res) {
+      resonateProfile = R.merge(resonateProfile, R.path(['body'], res));
+      if (resonateProfile.twitter && !(/(http(?:s)?:\/\/)?(?:www\.)?twitter\.com\/([a-zA-Z0-9_]+)/.test(resonateProfile.twitter))) {
+        resonateProfile.twitter = 'https://twitter.com/' + resonateProfile.twitter;
+      }
+      return resonateProfile;
+    })
+    .catch(function (err) {
+      return resonateProfile
+    });
+};
+var getAllInfo = function (resonateProfile) {
+  return getFullResonateProfileInfo(resonateProfile)
+    .then(function (fullResonateProfile) {
+      if (fullResonateProfile.twitter) {
+        return getTwitterInfo(fullResonateProfile.twitter)
           .then(function (twitterInfo) {
             var twitterInfoFiltered = R.fromPairs(R.filter(R.compose(R.contains(R.__, twitterAttributes), R.head), R.toPairs(twitterInfo)));
             var twitterInfoPrefixed = R.fromPairs(R.map(function (pair) {
               pair[0] = R.compose(R.concat('twitter_', R.__), R.head)(pair);
               return pair;
             }, R.toPairs(twitterInfoFiltered)));
-            return R.merge(this.profileInfo, twitterInfoPrefixed);
+            return R.merge(fullResonateProfile, twitterInfoPrefixed);
           });
       } else {
-        return this.profileInfo;
+        return fullResonateProfile;
       }
     });
-}
+};
 
 getUserDirectory()
-  .then(function (resonateProfileIds) {
-    return Promise.resolve(resonateProfileIds)
+  .bind({})
+  .then(function (resonateProfiles) {
+    console.log('start retrieving profile information for users...');
+    return Promise.resolve(resonateProfiles)
       .map(getAllInfo, {concurrency: 1});
   })
   .then(function (results) {
     console.log('processing results...');
+    //var columnTitles = R.keys(R.mergeAll(results));
+    var columnTitles = config.outputAttributes;
+
     R.addIndex(R.forEach)(function (heading, headingIndex) {
       var cell_ref = XLSX.utils.encode_cell({c: headingIndex, r: 0});
       ws[cell_ref] = {t: "s", v: heading};
       range.e.c = headingIndex;
-    }, R.keys(R.mergeAll(results)));
+    }, columnTitles);
+
     R.addIndex(R.forEach)(function (userInfo, index) {
       R.addIndex(R.forEach)(function (key, keyIndex) {
         var cell_ref = XLSX.utils.encode_cell({c: keyIndex, r: index + 1});
@@ -162,7 +189,7 @@ getUserDirectory()
           ws[cell_ref] = {t: "n", v: userInfo[key]};
         }
         range.e.r = index + 1;
-      }, R.keys(R.mergeAll(results)));
+      }, columnTitles);
     }, results);
 
     ws['!ref'] = XLSX.utils.encode_range(range);
@@ -171,18 +198,33 @@ getUserDirectory()
     wb.SheetNames.push(ws_name);
     wb.Sheets[ws_name] = ws;
     /* write file */
+
     console.log('writing results...');
-    XLSX.writeFile(wb, 'results.xlsx');
+
+    if (config.prependDate) {
+      var today = new Date();
+      var dd = today.getDate();
+      var mm = today.getMonth() + 1; //January is 0!
+      var yyyy = today.getFullYear();
+      config.outputFile = `${dd}_${mm}_${yyyy}_${config.outputFile}`;
+    }
+
+    XLSX.writeFile(wb, config.outputFile);
+
+    if (config.upload) {
+      slackUploader.uploadFileAsync({
+        file: fs.createReadStream(config.outputFile),
+        filetype: 'auto',
+        title: config.outputFile,
+        channels: '#twitterscraper'
+      })
+        .then(function (data) {
+          console.log('Uploaded file details: ', data);
+        })
+        .catch(function (err) {
+          console.log(err);
+        });
+    }
     console.log('done.');
   })
   .catch(console.log);
-
-/*
-
- var params = {screen_name: 'resonatecoop'};
- client.get('followers/ids', params, function (error, tweets, response) {
- if (!error) {
- console.log(tweets);
- }
- });
- */
