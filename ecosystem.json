@@ -1,0 +1,9 @@
+{
+  "apps": [
+    {
+      "name": "twitterscraper",
+      "script": "app.js",
+      "cron_restart": "0 4 * * 6"
+    }
+  ]
+}
