@@ -32,7 +32,7 @@ resonateScraper.prototype.getUserDirectory = function () {
 resonateScraper.prototype.getFullResonateProfileInfo = function (resonateProfile) {
   resonateProfile.profileLink = 'https://resonate.is/profile/' + resonateProfile.ID;
   this.logger.increment();
-  this.logger.logWithCount(`getting full profile information for user with login "${R.prop('user_login', resonateProfile)}"`);
+  this.logger.logWithCount(`getting full profile information for user with id "${R.prop('ID', resonateProfile)}"`);
 
   var profileInfo = {profileLink: resonateProfile.profileLink};
   return request.getAsync({
