@@ -94,4 +94,6 @@ fabric.properties
 # .idea/misc.xml
 # *.ipr
 .idea/deployment.xml
-credentials.json
+json/credentials.json
+results/
+!results/RESULTS

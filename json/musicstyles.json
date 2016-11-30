@@ -1,0 +1,368 @@
+[
+	{
+		"term_id" : 1,
+		"name" : "Uncategorized",
+		"slug" : "uncategorized",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 4,
+		"name" : "the blog",
+		"slug" : "the-blog",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 6,
+		"name" : "mobile",
+		"slug" : "mobile",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 8,
+		"name" : "post-format-quote",
+		"slug" : "post-format-quote",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 9,
+		"name" : "How would you change the music industry?",
+		"slug" : "how-would-you-change-the-music-industry",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 10,
+		"name" : "What does music mean to you?",
+		"slug" : "what-does-music-mean-to-you",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 11,
+		"name" : "Other",
+		"slug" : "other",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 12,
+		"name" : "How do you listen to music?",
+		"slug" : "how-do-you-listen-to-music",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 13,
+		"name" : "archive",
+		"slug" : "archive",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 14,
+		"name" : "strategies",
+		"slug" : "strategies",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 27,
+		"name" : "Music Genres",
+		"slug" : "music-genres",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 28,
+		"name" : "World",
+		"slug" : "world",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 29,
+		"name" : "Roots",
+		"slug" : "roots",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 30,
+		"name" : "Electronica",
+		"slug" : "electronica",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 31,
+		"name" : "Rock",
+		"slug" : "rock",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 32,
+		"name" : "Metal",
+		"slug" : "metal",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 33,
+		"name" : "Country",
+		"slug" : "country",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 34,
+		"name" : "Folk",
+		"slug" : "folk",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 35,
+		"name" : "Jazz",
+		"slug" : "jazz",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 36,
+		"name" : "Classical",
+		"slug" : "classical",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 37,
+		"name" : "Hip Hop",
+		"slug" : "hip-hop",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 38,
+		"name" : "R&amp;B",
+		"slug" : "rb",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 39,
+		"name" : "Soul",
+		"slug" : "soul",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 40,
+		"name" : "Blues",
+		"slug" : "blues",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 41,
+		"name" : "Funk",
+		"slug" : "funk",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 42,
+		"name" : "Punk",
+		"slug" : "punk",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 43,
+		"name" : "Skills",
+		"slug" : "skills",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 44,
+		"name" : "Design",
+		"slug" : "design",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 45,
+		"name" : "Graphics Editing",
+		"slug" : "graphics-editing",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 46,
+		"name" : "Marketing",
+		"slug" : "marketing",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 47,
+		"name" : "Social Sharing",
+		"slug" : "social-sharing",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 48,
+		"name" : "Writing",
+		"slug" : "writing",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 49,
+		"name" : "Website Editing",
+		"slug" : "website-editing",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 50,
+		"name" : "main menu",
+		"slug" : "main-menu",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 51,
+		"name" : "Research",
+		"slug" : "research",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 52,
+		"name" : "Pop",
+		"slug" : "pop",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 53,
+		"name" : "Reggae",
+		"slug" : "reggae",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 54,
+		"name" : "Comments or Suggestions",
+		"slug" : "comments-or-suggestions",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 55,
+		"name" : "Design",
+		"slug" : "design",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 56,
+		"name" : "Code",
+		"slug" : "code",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 57,
+		"name" : "Content Editing",
+		"slug" : "content-editing",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 58,
+		"name" : "Marketing and Recruiting",
+		"slug" : "marketing",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 59,
+		"name" : "Research",
+		"slug" : "research",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 60,
+		"name" : "Community",
+		"slug" : "community",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 61,
+		"name" : "Nominate a band",
+		"slug" : "nominate-a-band",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 68,
+		"name" : "press",
+		"slug" : "press",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 69,
+		"name" : "artists",
+		"slug" : "artists",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 70,
+		"name" : "suggestions",
+		"slug" : "suggestions",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 71,
+		"name" : "Singer Songwriter",
+		"slug" : "singer-songwriter",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 72,
+		"name" : "campaign",
+		"slug" : "campaign",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 73,
+		"name" : "Experimental",
+		"slug" : "experimental",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 74,
+		"name" : "Video Editing",
+		"slug" : "video-editing",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 75,
+		"name" : "Organizing",
+		"slug" : "organizing",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 76,
+		"name" : "Team Leading",
+		"slug" : "team-leading",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 77,
+		"name" : "Campaign",
+		"slug" : "campaign",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 78,
+		"name" : "general",
+		"slug" : "general",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 79,
+		"name" : "campaign",
+		"slug" : "campaign",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 80,
+		"name" : "press-podcasts",
+		"slug" : "press-podcasts",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 81,
+		"name" : "press-featured",
+		"slug" : "press-featured",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 82,
+		"name" : "new mobile menu",
+		"slug" : "new-mobile-menu",
+		"term_group" : 0
+	},
+	{
+		"term_id" : 83,
+		"name" : "usermenu",
+		"slug" : "usermenu",
+		"term_group" : 0
+	}
+]
