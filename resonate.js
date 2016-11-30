@@ -8,6 +8,7 @@ const osmosis = require('osmosis'),
   fs = require('fs'),
   cookie = require('cookie'),
   credentials = require('./credentials.json'),
+  musicStyles = require('./musicstyles.json'),
   config = require('./config.json'),
   SlackUploader = Promise.promisifyAll(require('node-slack-upload')),
   slackUploader = Promise.promisifyAll(new SlackUploader(credentials.slackToken)),
@@ -74,68 +75,61 @@ var getFullResonateProfileInfo = function (resonateProfile) {
   logWithCount(`getting full profile information for user with login "${R.prop('user_login', resonateProfile)}"`);
   return new Promise(function (resolve, reject) {
     var profileInfo = {profileLink: resonateProfile.profileLink};
-    osmosis
-      .get(resonateProfile.profileLink)
-      .set({
-        //'username': "h1.entry-title[2]@value",
-        'username': "h1[contains(@class, 'entry-title')][1]",
-        'genres': "div[contains(@class, 'um-main-meta')]/div[contains(@class, 'genre')][1]/[2]",
-        'location': "div[contains(@class, 'um-main-meta')]/div[contains(@class, 'genre')][3]/[2]",
-        'twitterUrl': "a[@title='Twitter']/@href",
-        'facebookUrl': "a[@title='Facebook']/@href",
-        'instagramUrl': "a[@title='Instagram']/@href",
-        'blogs': 'label[for="musicblogs-1885"]'
-      })
-      .data(function (result) {
-        profileInfo = R.merge(profileInfo, result);
-      })
-      .done(function () {
-        request.getAsync({
-          url: 'https://resonate.is/um-api/get.user/',
-          qs: {
-            id: resonateProfile.ID,
-            key: credentials.resonateKey,
-            token: credentials.resonateToken,
-            fields: 'musicblogs,instagram,twitter,facebook,display_name,user_nicename,mylabel,Musicstyles,user_registered'
-          },
-          json: true
-        })
-          .then(function (res) {
-            profileInfo.blogs = R.split('\r\n', R.path(['body', 'musicblogs'], res));
-            profileInfo.user_registered = R.path(['body', 'user_registered'], res);
-            profileInfo.twitter = R.path(['body', 'twitter'], res);
-            if (profileInfo.twitter && !(/(http(?:s)?:\/\/)?(?:www\.)?twitter\.com\/([a-zA-Z0-9_]+)/.test(profileInfo.twitter))) {
-              profileInfo.twitter = 'https://twitter.com/' + profileInfo.twitter;
-            }
-            var labelId = R.path(['body', 'mylabel'], res);
-            if (labelId) {
-              return request.getAsync({
-                url: 'https://resonate.is/um-api/get.user/',
-                qs: {
-                  id: labelId,
-                  key: credentials.resonateKey,
-                  token: credentials.resonateToken,
-                  fields: 'musicblogs,instagram,twitter,facebook,display_name,user_nicename,mylabel,Musicstyles,user_registered'
-                },
-                json: true
-              });
-            } else {
-              return;
-            }
-          })
-          .then(function (res) {
-            if (res) {
-              profileInfo.label = R.path(['body', 'username'], res);
-            }
-            resolve(profileInfo)
-          })
-          .catch(function (err) {
-            resolve(profileInfo);
+    request.getAsync({
+      url: 'https://resonate.is/um-api/get.user/',
+      qs: {
+        id: resonateProfile.ID,
+        key: credentials.resonateKey,
+        token: credentials.resonateToken,
+        fields: 'musicblogs,instagram,twitter,facebook,display_name,user_nicename,mylabel,Musicstyles,user_registered'
+      },
+      json: true
+    })
+      .then(function (res) {
+        var regex = /"(.*?)"/g;
+        var matches, musicStyleIds = [];
+        while (matches = regex.exec(R.path(['body', 'Musicstyles'], res))) {
+          musicStyleIds.push(matches[1]);
+        }
+
+        profileInfo.genres = R.join(',', R.map(function (styleId) {
+          return R.prop('name', R.find(R.propEq('term_id', parseInt(styleId, 10)))(musicStyles));
+        }, musicStyleIds));
+
+        profileInfo.blogs = R.split('\r\n', R.path(['body', 'musicblogs'], res));
+        profileInfo.facebook = R.path(['body', 'facebook'], res);
+        profileInfo.username = R.path(['body', 'username'], res);
+        profileInfo.instagram = R.path(['body', 'instagram'], res);
+        profileInfo.user_registered = R.path(['body', 'user_registered'], res);
+        profileInfo.twitter = R.path(['body', 'twitter'], res);
+        if (profileInfo.twitter && !(/(http(?:s)?:\/\/)?(?:www\.)?twitter\.com\/([a-zA-Z0-9_]+)/.test(profileInfo.twitter))) {
+          profileInfo.twitter = 'https://twitter.com/' + profileInfo.twitter;
+        }
+        var labelId = R.path(['body', 'mylabel'], res);
+        if (labelId) {
+          return request.getAsync({
+            url: 'https://resonate.is/um-api/get.user/',
+            qs: {
+              id: labelId,
+              key: credentials.resonateKey,
+              token: credentials.resonateToken,
+              fields: 'musicblogs,instagram,twitter,facebook,display_name,user_nicename,mylabel,Musicstyles,user_registered'
+            },
+            json: true
           });
+        } else {
+          return;
+        }
       })
-      //.log(console.log)
-      .error(console.log);
-    //.debug(console.log);
+      .then(function (res) {
+        if (res) {
+          profileInfo.label = R.path(['body', 'username'], res);
+        }
+        resolve(profileInfo)
+      })
+      .catch(function (err) {
+        resolve(profileInfo);
+      });
   });
 
   return request.getAsync({
@@ -182,28 +176,28 @@ console.time('script execution duration');
 getUserDirectory()
   .bind({})
   .then(function (resonateProfiles) {
-    // resonateProfiles = [{
-    //   "ID": "544",
-    //   "user_login": "mattblack",
-    //   "user_nicename": "mattblack",
-    //   "user_email": "mattb@ninjatune.net",
-    //   "user_url": "",
-    //   "user_registered": "2016-07-14 19:12:47",
-    //   "display_name": "Matt Black",
-    //   "spam": "0",
-    //   "deleted": "0",
-    //   "roles": [
-    //     "subscriber"
-    //   ],
-    //   "first_name": "Matt",
-    //   "last_name": "Black",
-    //   "community_role": "member",
-    //   "account_status": "approved",
-    //   "profile_pic_original": "https:\/\/resonate.is\/wp-content\/uploads\/ultimatemember\/544\/profile_photo.jpg?1480468003",
-    //   "profile_pic_normal": "https:\/\/resonate.is\/wp-content\/uploads\/ultimatemember\/544\/profile_photo-300.jpg?1480468003",
-    //   "profile_pic_small": "https:\/\/resonate.is\/wp-content\/uploads\/ultimatemember\/544\/profile_photo-40.jpg?1480468003",
-    //   "cover_photo": ""
-    // }];
+    resonateProfiles = [{
+      "ID": "72",
+      "user_login": "mattblack",
+      "user_nicename": "mattblack",
+      "user_email": "mattb@ninjatune.net",
+      "user_url": "",
+      "user_registered": "2016-07-14 19:12:47",
+      "display_name": "Matt Black",
+      "spam": "0",
+      "deleted": "0",
+      "roles": [
+        "subscriber"
+      ],
+      "first_name": "Matt",
+      "last_name": "Black",
+      "community_role": "member",
+      "account_status": "approved",
+      "profile_pic_original": "https:\/\/resonate.is\/wp-content\/uploads\/ultimatemember\/544\/profile_photo.jpg?1480468003",
+      "profile_pic_normal": "https:\/\/resonate.is\/wp-content\/uploads\/ultimatemember\/544\/profile_photo-300.jpg?1480468003",
+      "profile_pic_small": "https:\/\/resonate.is\/wp-content\/uploads\/ultimatemember\/544\/profile_photo-40.jpg?1480468003",
+      "cover_photo": ""
+    }];
     console.log('start retrieving profile information for users...');
     return Promise.resolve(resonateProfiles)
       .map(getAllInfo, {concurrency: 1});

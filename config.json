@@ -1,7 +1,7 @@
 {
   "outputAttributes": ["profileLink", "user_registered", "username", "blogs",
     "twitter", "twitter_followers_count", "twitter_friends_count", "twitter_listed_count", "twitter_favourites_count", "twitter_statuses_count",
-    "label", "facebookUrl", "instagramUrl", "genres"],
+    "label", "facebook", "instagram", "genres"],
   "upload": true,
   "outputFile": "twitterscraper_result.xlsx",
   "prependDate": true
