@@ -13,7 +13,7 @@ resonateScraper.prototype.getUserDirectory = function () {
   return request.getAsync({
     url: 'https://resonate.is/um-api/get.users/',
     qs: {
-      number: 100,
+      number: 100000,
       key: this.credentials.resonateKey,
       token: this.credentials.resonateToken
     },

@@ -22,7 +22,9 @@ twitterScraper.prototype.getTwitterInfo = function (twitterUrl) {
         resolve(twitterInfo);
       })
       //.log(console.log)
-      .error(self.logger.logWithCount);
+      .error(function(message){
+        self.logger.logWithCount(message);
+      });
     //.debug(console.log);
   });
 };
