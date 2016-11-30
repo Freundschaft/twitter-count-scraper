@@ -1,5 +1,5 @@
 const R = require('ramda'),
-  XLSX = require('XLSX'),
+  XLSX = require('xlsx'),
   Promise = require('bluebird'),
   path = require('path'),
   fs = require('fs'),
