@@ -103,7 +103,7 @@ resonateScraper.getUserDirectory()
         file: fs.createReadStream(config.outputFile),
         filetype: 'auto',
         title: config.outputFile,
-        channels: '#twitterscraper'
+        channels: 'G38RS6VKP'
       })
         .then(function (data) {
           console.log('Uploaded file details: ', data);
