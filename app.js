@@ -113,11 +113,11 @@ resonateScraper.getUserDirectory()
         auth: jwtClient,
         resource: {
           name: config.outputFile,
-          mimeType: 'text/plain',
+          mimeType: 'application/vnd.google-apps.spreadsheet',
           parents: ['0B8AYaD8iTN99Wm51ZmVselJJb0E']
         },
         media: {
-          mimeType: 'text/plain',
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           body: fs.createReadStream(config.outputFile)
         },
         fields: 'id'
