@@ -5,8 +5,6 @@ const R = require('ramda'),
   fs = require('fs'),
   cookie = require('cookie'),
   credentials = require('./json/credentials.json'),
-  SlackUploader = Promise.promisifyAll(require('node-slack-upload')),
-  slackUploader = Promise.promisifyAll(new SlackUploader(credentials.slackToken)),
   ws_name = "resonate profiles",
   config = require('./json/config.json'),
   Logger = require('./src/logger.js'),
@@ -14,7 +12,18 @@ const R = require('ramda'),
   ResonateScraper = require('./src/resonate.js'),
   resonateScraper = new ResonateScraper(credentials, logger),
   TwitterScraper = require('./src/twitter.js'),
-  twitterScraper = new TwitterScraper(logger);
+  twitterScraper = new TwitterScraper(logger),
+  google = require('googleapis'),
+  googleJwtKey = require('./json/google-jwt.json'),
+  drive = Promise.promisifyAll(google.drive('v3'));
+
+var jwtClient = new google.auth.JWT(
+  googleJwtKey.client_email,
+  null,
+  googleJwtKey.private_key,
+  ['https://www.googleapis.com/auth/drive'],
+  null
+);
 
 function Workbook() {
   if (!(this instanceof Workbook)) return new Workbook();
@@ -99,11 +108,18 @@ resonateScraper.getUserDirectory()
     XLSX.writeFile(wb, config.outputFile);
 
     if (config.upload) {
-      slackUploader.uploadFileAsync({
-        file: fs.createReadStream(config.outputFile),
-        filetype: 'auto',
-        title: config.outputFile,
-        channels: 'G38RS6VKP'
+      drive.files.createAsync({
+        auth: jwtClient,
+        resource: {
+          name: config.outputFile,
+          mimeType: 'text/plain',
+          parents: ['0B8AYaD8iTN99Wm51ZmVselJJb0E']
+        },
+        media: {
+          mimeType: 'text/plain',
+          body: fs.createReadStream(config.outputFile)
+        },
+        fields: 'id'
       })
         .then(function (data) {
           console.log('Uploaded file details: ', data);

@@ -95,5 +95,6 @@ fabric.properties
 # *.ipr
 .idea/deployment.xml
 json/credentials.json
+json/google-jwt.json
 results/
 !results/RESULTS
