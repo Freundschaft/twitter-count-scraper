@@ -16,6 +16,7 @@ const R = require('ramda'),
   google = require('googleapis'),
   googleJwtKey = require('./json/google-jwt.json'),
   drive = Promise.promisifyAll(google.drive('v3'));
+Promise.promisifyAll(drive.files);
 
 var jwtClient = new google.auth.JWT(
   googleJwtKey.client_email,
