@@ -11,13 +11,13 @@
   "dependencies": {
     "bluebird": "^3.4.2",
     "cookie": "^0.3.1",
-    "googleapis": "^19.0.0",
+    "googleapis": "^39.1.0",
     "node-slack-upload": "^1.2.1",
     "osmosis": "^1.1.1",
     "ramda": "^0.22.1",
     "request": "^2.75.0",
     "twitter": "^1.4.0",
-    "xlsx": "^0.8.0"
+    "xlsx": ">=0.17.0"
   },
   "devDependencies": {
     "mocha": "^3.2.0",
